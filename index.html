@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax Invoice Agent — 인터랙티브 프로토타입</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F3EC;
+    --paper-deep:#ECE5D6;
+    --ink:#1F2A24;
+    --ink-soft:#5B685F;
+    --seal:#B33A3A;
+    --seal-soft:#E9C7C2;
+    --agent:#2F6F62;
+    --agent-soft:#DCEAE5;
+    --line:#D8D2C4;
+    --warn:#9B6A22;
+    --warn-bg:#F3E6CE;
+    --bg:#161F1B;
+    --bg-grid: rgba(247,243,236,0.035);
+    --radius-lg:28px;
+    --radius-md:14px;
+    --radius-sm:8px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html,body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--paper);
+    font-family:'Noto Sans KR', sans-serif;
+  }
+
+  body{
+    background-image:
+      repeating-linear-gradient(0deg, var(--bg-grid) 0px, var(--bg-grid) 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, var(--bg-grid) 0px, var(--bg-grid) 1px, transparent 1px, transparent 28px);
+    padding: 56px 20px 80px;
+  }
+
+  .stage{
+    max-width: 640px;
+    margin: 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .stage-head{ text-align:center; margin-bottom: 40px; }
+
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color: #8FA79C;
+    margin:0 0 14px;
+    font-weight:500;
+  }
+
+  .stage-head h1{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size: clamp(24px, 4vw, 32px);
+    line-height:1.4;
+    margin:0 0 14px;
+    color: var(--paper);
+  }
+
+  .stage-head p{
+    font-size:14px;
+    line-height:1.7;
+    color:#A9BAB1;
+    max-width: 460px;
+    margin: 0 auto;
+  }
+
+  .stage-head a{ color:#C9D9CC; }
+
+  /* step tracker */
+  .tracker{
+    display:flex;
+    align-items:center;
+    gap:2px;
+    margin: 32px 0 28px;
+    width:100%;
+    max-width: 480px;
+  }
+  .tracker__step{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    color: #7C8D83;
+    font-family:inherit;
+    padding: 4px 0;
+  }
+  .tracker__dot{
+    width:26px; height:26px;
+    border-radius:50%;
+    border:1.5px solid #45524B;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px;
+    font-weight:700;
+    background: transparent;
+    transition: all .25s ease;
+  }
+  .tracker__label{
+    font-size:10px;
+    letter-spacing:0.02em;
+    white-space:nowrap;
+  }
+  .tracker__step.is-current .tracker__dot{
+    background: var(--agent);
+    border-color: var(--agent);
+    color: var(--paper);
+  }
+  .tracker__step.is-current .tracker__label{ color: var(--paper); font-weight:700; }
+  .tracker__step.is-done .tracker__dot{
+    border-color: var(--agent);
+    color: var(--agent);
+  }
+  .tracker__rule{
+    height:1px;
+    flex:0.5;
+    background:#3A453E;
+    margin-bottom: 22px;
+  }
+
+  /* device frame */
+  .device{
+    width:100%;
+    max-width: 380px;
+    background: #0F1512;
+    border-radius: 44px;
+    padding: 14px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .device__notch{
+    width: 90px; height:6px;
+    background:#26312B;
+    border-radius:4px;
+    margin: 0 auto 12px;
+  }
+  .device__screen{
+    position:relative;
+    background: var(--paper);
+    border-radius: var(--radius-lg);
+    min-height: 620px;
+    overflow:hidden;
+    color: var(--ink);
+  }
+
+  .screen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    padding: 28px 22px 24px;
+    opacity:0;
+    transform: translateY(10px);
+    pointer-events:none;
+    transition: opacity .28s ease, transform .28s ease;
+  }
+  .screen.is-active{
+    opacity:1;
+    transform:none;
+    pointer-events:auto;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .screen{ transition:none; }
+  }
+
+  .screen__back{
+    background:none;border:none;cursor:pointer;
+    font-size:20px;color:var(--ink-soft);
+    align-self:flex-start;
+    padding:0 0 14px;
+    font-family:inherit;
+  }
+
+  .screen__title{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size:20px;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  .screen__sub{
+    font-size:12.5px;
+    color: var(--ink-soft);
+    line-height:1.6;
+    margin: 0 0 22px;
+  }
+
+  /* screen 1 : connect */
+  .connect{ justify-content:center; align-items:center; text-align:center; gap:18px; }
+  .connect__mark{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:0.01em;
+  }
+  .connect__hint{
+    font-size:12px;
+    color: var(--ink-soft);
+    max-width: 240px;
+    line-height:1.7;
+  }
+
+  /* buttons */
+  .btn{
+    font-family:inherit;
+    font-size:14.5px;
+    font-weight:700;
+    border-radius: var(--radius-md);
+    border:none;
+    padding: 15px 18px;
+    cursor:pointer;
+    transition: transform .12s ease, opacity .12s ease;
+  }
+  .btn:active{ transform: scale(0.98); }
+  .btn:disabled{ opacity:0.38; cursor:not-allowed; }
+  .btn--primary{ background: var(--ink); color: var(--paper); width:100%; }
+  .btn--agent{ background: var(--agent); color:#fff; width:100%; }
+  .btn--seal{ background: var(--seal); color:#fff; }
+  .btn--ghost{ background: transparent; color: var(--ink); border:1.5px solid var(--line); }
+  .btn--block{ width:100%; }
+  .btn--sm{ padding: 12px 16px; font-size:13px; }
+
+  /* screen 2: dashboard */
+  .greet{ font-size:16px; font-weight:700; margin: 0 0 20px; }
+  .cta-card{
+    background: var(--agent);
+    color:#fff;
+    border:none;
+    border-radius: var(--radius-md);
+    padding: 18px;
+    font-family:inherit;
+    font-size:15px;
+    font-weight:700;
+    text-align:left;
+    cursor:pointer;
+    margin-bottom: 26px;
+    transition: transform .12s ease;
+  }
+  .cta-card:active{ transform: scale(0.98); }
+
+  .history__label{
+    font-size:11px;
+    letter-spacing:0.06em;
+    color: var(--ink-soft);
+    text-transform:uppercase;
+    margin: 0 0 10px;
+  }
+  .history__rule{ height:1px; background:var(--line); margin-bottom:10px; }
+  .history__list{ display:flex; flex-direction:column; gap:2px; }
+  .history__row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding: 9px 0;
+    font-size:13px;
+    border-bottom: 1px solid var(--line);
+  }
+  .history__row:last-child{ border-bottom:none; }
+  .history__vendor{ color: var(--ink); flex:1; margin-left:10px; }
+  .history__date{ color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .history__amount{ font-variant-numeric: tabular-nums; font-weight:600; margin-right:8px; }
+  .history__status{ color: var(--agent); font-size:11.5px; font-weight:700; }
+  .history__row--new{ animation: rowIn .5s ease; }
+  @keyframes rowIn{ from{ background: var(--agent-soft);} to{ background:transparent; } }
+
+  /* screen 3: form */
+  .field{ margin-bottom: 16px; }
+  .field__label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field__row{ display:flex; gap:8px; }
+  .input{
+    font-family:inherit;
+    font-size:14px;
+    padding: 11px 12px;
+    border:1.5px solid var(--line);
+    border-radius: var(--radius-sm);
+    background:#fff;
+    color: var(--ink);
+    width:100%;
+    font-variant-numeric: tabular-nums;
+  }
+  .input:focus{ outline:2px solid var(--agent); outline-offset:1px; border-color:var(--agent); }
+  .field__result{
+    margin-top:7px;
+    font-size:12.5px;
+    font-weight:700;
+    min-height:16px;
+  }
+  .field__result--ok{ color: var(--agent); }
+  .field__result--blocked{ color: var(--seal); }
+  .field__result--pending{ color: var(--ink-soft); font-weight:400; }
+
+  .qty-row{ display:flex; gap:10px; align-items:center; }
+  .qty-row .input{ text-align:right; }
+  .qty-row__x{ color: var(--ink-soft); font-size:13px; }
+
+  .calc{
+    background: var(--paper-deep);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin: 6px 0 24px;
+  }
+  .calc__row{
+    display:flex; justify-content:space-between;
+    font-size:13.5px;
+    padding: 4px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .calc__row span:last-child{ font-weight:700; }
+  .calc__note{ font-size:10.5px; color: var(--ink-soft); font-weight:400; }
+
+  .screen__foot{ margin-top:auto; }
+
+  /* screen 4: agent progress */
+  .agent-title{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size:18px;
+    margin: 40px 0 22px;
+  }
+  .steps{ display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+  .step{
+    display:flex; align-items:center; gap:10px;
+    font-size:13.5px;
+    color: var(--line);
+    opacity:0.35;
+    transition: opacity .3s ease, color .3s ease;
+  }
+  .step.is-active{ opacity:1; color: var(--ink-soft); }
+  .step.is-done{ opacity:1; color: var(--ink); }
+  .step__mark{
+    width:18px; height:18px; border-radius:50%;
+    border:1.5px solid var(--line);
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px;
+    color:transparent;
+  }
+  .step.is-done .step__mark{ background: var(--agent); border-color:var(--agent); color:#fff; }
+  .step.is-active .step__mark{ border-color: var(--agent); }
+
+  .quote{
+    background: var(--agent-soft);
+    border-left:3px solid var(--agent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 14px 16px;
+    font-size:12.5px;
+    line-height:1.7;
+    color: #1E4038;
+  }
+
+  /* screen 5: preview */
+  .preview{
+    background: var(--paper-deep);
+    border-radius: var(--radius-sm);
+    padding: 16px 16px 4px;
+    margin-bottom:16px;
+  }
+  .preview__row{
+    display:flex; justify-content:space-between;
+    font-size:13.5px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .preview__row:last-child{ border-bottom:none; }
+  .preview__row--total{ font-weight:700; font-size:14.5px; }
+  .preview__label{ color: var(--ink-soft); }
+
+  .warn{
+    display:flex; gap:8px; align-items:flex-start;
+    background: var(--warn-bg);
+    color:#6B4A17;
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-size:12px;
+    line-height:1.6;
+    margin-bottom:20px;
+  }
+
+  .btn-pair{ display:flex; gap:10px; }
+  .btn-pair .btn{ flex:1; }
+
+  /* modal */
+  .modal{
+    position:absolute; inset:0;
+    background: rgba(20,26,22,0.55);
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+    opacity:0; pointer-events:none;
+    transition: opacity .2s ease;
+  }
+  .modal.is-active{ opacity:1; pointer-events:auto; }
+  .modal__box{
+    background:#fff;
+    border-radius: var(--radius-md);
+    padding: 22px 20px;
+    width:100%;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  }
+  .modal__title{ font-weight:700; font-size:15px; margin:0 0 6px; }
+  .modal__hint{ font-size:12px; color: var(--ink-soft); margin:0 0 12px; }
+
+  /* screen 7: done */
+  .done{ align-items:center; text-align:center; justify-content:center; gap:6px; }
+  .stamp{
+    width:76px; height:76px;
+    border-radius:50%;
+    border:3px solid var(--seal);
+    color: var(--seal);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size:15px;
+    margin-bottom:18px;
+    transform: scale(0) rotate(-18deg);
+    animation: stampDown .5s cubic-bezier(.34,1.56,.64,1) forwards;
+    animation-delay: .15s;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .stamp{ animation:none; transform:none; }
+  }
+  @keyframes stampDown{
+    to{ transform: scale(1) rotate(-8deg); }
+  }
+  .done__title{ font-family:'Noto Serif KR', serif; font-weight:700; font-size:19px; margin:0 0 18px; }
+  .done__receipt{
+    font-size:12px; color: var(--ink-soft); margin:0 0 2px;
+  }
+  .done__receipt-no{
+    font-variant-numeric: tabular-nums;
+    font-weight:700; font-size:15px; color:var(--ink);
+    margin: 0 0 16px;
+  }
+  .done__mail{ font-size:12.5px; color: var(--ink-soft); margin:0 0 28px; }
+
+  /* caption + reset */
+  .caption{
+    max-width: 380px;
+    text-align:center;
+    font-size:12.5px;
+    line-height:1.7;
+    color:#8FA79C;
+    margin: 22px 0 6px;
+    min-height: 40px;
+  }
+  .reset-link{
+    background:none; border:none; cursor:pointer;
+    color:#63756B; font-size:12px; text-decoration:underline;
+    font-family:inherit; margin-top: 10px;
+  }
+
+  @media (max-width: 460px){
+    .tracker__label{ display:none; }
+    .device{ border-radius:30px; padding:10px; }
+    .device__screen{ border-radius:20px; min-height: 580px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="stage-head">
+    <p class="eyebrow">Tax Invoice Agent · 인터랙티브 프로토타입</p>
+    <h1>세금계산서 발행,<br>에이전트에게 맡기고 확인만 하기</h1>
+    <p>
+      NAVER AI Challenge 개인 프로젝트 기획서 「화면 구조」의 ①~⑦ 흐름을 그대로 눌러볼 수 있게 만들었습니다.
+      순수 HTML/CSS + 최소한의 자바스크립트로 동작을 흉내낸 정적 프로토타입이며,
+      실제 홈택스·공공데이터 API 연동은 포함하지 않습니다.
+    </p>
+  </div>
+
+  <nav class="tracker" id="tracker" aria-label="화면 단계 이동"></nav>
+
+  <div class="device">
+    <div class="device__notch"></div>
+    <div class="device__screen" id="screenRoot">
+
+      <!-- ① 로그인/연결 -->
+      <section class="screen connect" data-screen="1">
+        <p class="connect__mark">Tax Invoice Agent</p>
+        <button class="btn btn--primary" id="connectBtn" style="width:auto; padding:15px 26px;">사업자 인증서로 연결하기</button>
+        <p class="connect__hint">※ 최초 1회만 필요합니다. 이후에는 자동으로 로그인된 상태로 시작합니다.</p>
+      </section>
+
+      <!-- ② 홈 대시보드 -->
+      <section class="screen" data-screen="2">
+        <p class="greet">안녕하세요, 이수진 사장님</p>
+        <button class="cta-card" id="newInvoiceBtn">+ 새 세금계산서 발행</button>
+        <p class="history__label">최근 발행 내역</p>
+        <div class="history__rule"></div>
+        <div class="history__list" id="historyList"></div>
+      </section>
+
+      <!-- ③ 발행 정보 입력 -->
+      <section class="screen" data-screen="3">
+        <button class="screen__back" id="backTo2">←</button>
+        <p class="screen__title">새 세금계산서 발행</p>
+
+        <div class="field">
+          <label class="field__label">거래처 사업자번호</label>
+          <div class="field__row">
+            <input class="input" id="bizNoInput" inputmode="numeric" maxlength="12" placeholder="000-00-00000">
+            <button class="btn btn--ghost btn--sm" id="verifyBtn" style="flex-shrink:0;">조회</button>
+          </div>
+          <p class="field__result" id="bizResult"></p>
+        </div>
+
+        <div class="field">
+          <label class="field__label">작성일자</label>
+          <input class="input" type="date" id="dateInput" value="2026-07-08">
+        </div>
+
+        <div class="field">
+          <label class="field__label">품목</label>
+          <input class="input" id="itemInput" value="원단 A">
+        </div>
+
+        <div class="field">
+          <label class="field__label">수량 × 단가</label>
+          <div class="qty-row">
+            <input class="input" type="number" id="qtyInput" value="30" min="1">
+            <span class="qty-row__x">×</span>
+            <input class="input" type="number" id="priceInput" value="10000" min="0" step="100">
+            <span class="qty-row__x">원</span>
+          </div>
+        </div>
+
+        <div class="calc">
+          <div class="calc__row"><span>공급가액 <span class="calc__note">(자동 계산)</span></span><span id="calcSupply">300,000원</span></div>
+          <div class="calc__row"><span>세액 <span class="calc__note">(자동 계산)</span></span><span id="calcTax">30,000원</span></div>
+        </div>
+
+        <div class="screen__foot">
+          <button class="btn btn--primary btn--block" id="toStep4Btn" disabled>다음: 검토하기 →</button>
+        </div>
+      </section>
+
+      <!-- ④ 에이전트 진행 상황 -->
+      <section class="screen" data-screen="4">
+        <p class="agent-title">확인하고 있습니다...</p>
+        <div class="steps">
+          <div class="step" id="step-a"><span class="step__mark">✓</span><span>거래처 사업자번호 확인 완료</span></div>
+          <div class="step" id="step-b"><span class="step__mark">✓</span><span id="step-b-text">매입세액공제 대상 여부 판단 완료</span></div>
+          <div class="step" id="step-c"><span class="step__mark">✓</span><span id="step-c-text">세금계산서 초안 작성 중...</span></div>
+        </div>
+        <p class="quote" id="agentQuote"></p>
+      </section>
+
+      <!-- ⑤ 미리보기 -->
+      <section class="screen" data-screen="5">
+        <p class="screen__title">발행 전 최종 확인</p>
+        <div class="preview">
+          <div class="preview__row"><span class="preview__label">공급자</span><span>이수진 (본인)</span></div>
+          <div class="preview__row"><span class="preview__label">공급받는자</span><span id="pvVendor">㈜가나섬유</span></div>
+          <div class="preview__row"><span class="preview__label">작성일자</span><span id="pvDate">2026-07-08</span></div>
+          <div class="preview__row"><span class="preview__label">품목</span><span id="pvItem">원단 A</span></div>
+          <div class="preview__row"><span class="preview__label">공급가액</span><span id="pvSupply">300,000원</span></div>
+          <div class="preview__row"><span class="preview__label">세액</span><span id="pvTax">30,000원</span></div>
+          <div class="preview__row preview__row--total"><span class="preview__label">합계</span><span id="pvTotal">330,000원</span></div>
+        </div>
+        <p class="warn">⚠ 발행 후에는 되돌릴 수 없습니다</p>
+        <div class="btn-pair screen__foot">
+          <button class="btn btn--ghost" id="backTo3">수정하기</button>
+          <button class="btn btn--seal" id="openModalBtn">발행 확인 →</button>
+        </div>
+
+        <div class="modal" id="confirmModal">
+          <div class="modal__box">
+            <p class="modal__title">정말 발행하시겠습니까?</p>
+            <p class="modal__hint">아래에 "발급확인"을 입력해주세요</p>
+            <input class="input" id="confirmInput" placeholder="발급확인">
+            <div class="btn-pair" style="margin-top:14px;">
+              <button class="btn btn--ghost" id="cancelModalBtn">취소</button>
+              <button class="btn btn--seal" id="issueBtn" disabled>발행하기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ⑥ (모달은 ⑤ 화면 위에 오버레이) -->
+      <section class="screen" data-screen="6" aria-hidden="true"></section>
+
+      <!-- ⑦ 발행 완료 -->
+      <section class="screen done" data-screen="7">
+        <div class="stamp">발행필</div>
+        <p class="done__title">✅ 발행 완료</p>
+        <p class="done__receipt">접수번호</p>
+        <p class="done__receipt-no" id="receiptNo">20260708-00000000</p>
+        <p class="done__mail" id="doneMail">㈜가나섬유 님께 이메일로 발송되었습니다</p>
+        <button class="btn btn--primary" id="goHomeBtn" style="width:auto; padding:14px 26px;">홈으로 돌아가기</button>
+      </section>
+
+    </div>
+  </div>
+
+  <p class="caption" id="caption"></p>
+  <button class="reset-link" id="resetBtn">처음부터 다시 보기</button>
+
+</div>
+
+<script>
+(function(){
+  var TRACKER_STEPS = [
+    { n:1, label:'연결' },
+    { n:2, label:'홈' },
+    { n:3, label:'입력' },
+    { n:4, label:'진행' },
+    { n:5, label:'미리보기' },
+    { n:6, label:'확인' },
+    { n:7, label:'완료' }
+  ];
+
+  var CAPTIONS = {
+    1: '사업자용 금융인증서로 홈택스 로그인을 1회 연결하는 화면. 이후 화면들은 이 로그인 상태를 재사용하므로 다시 나타나지 않습니다.',
+    2: '가장 중요한 행동 "새 세금계산서 발행"을 최상단에 크게 배치. 최근 발행 내역은 참고용 목록으로만 최소한으로 노출됩니다.',
+    3: '사람이 입력하는 건 거래처·품목·수량·단가뿐. 사업자번호는 입력 즉시 조회되고, 금액은 자동 계산되어 손계산이 필요 없습니다.',
+    4: '에이전트가 무엇을 확인하는 중인지 실시간으로 보여줘서 불안을 없앱니다. 판단은 이미 코드가 끝낸 것이고, 이 화면은 그 결과를 사람이 알아듣게 설명합니다.',
+    5: '실제 제출 전 반드시 거치는 화면. "수정하기"를 누르면 ③ 화면으로 돌아갑니다.',
+    6: '단순 버튼 클릭이 아니라 문구를 직접 타이핑해야 진행되는 마지막 안전장치. 실수로 누르는 걸 막기 위한 의도적인 마찰입니다.',
+    7: '발행 완료 후 접수번호가 발급되고, 거래처 이메일로 자동 발송됐다는 안내가 나옵니다.'
+  };
+
+  var state = {
+    current: 1,
+    bizNo: '115-81-12345',
+    verified: true,
+    blocked: false,
+    vendorName: '㈜가나섬유',
+    vendorStatus: '일반과세자 · 정상 사업자',
+    deductible: true,
+    date: '2026-07-08',
+    item: '원단 A',
+    qty: 30,
+    price: 10000,
+    history: [
+      { date:'07-05', vendor:'㈜가나섬유', amount:330000 },
+      { date:'07-02', vendor:'홍길동상회', amount:110000 }
+    ]
+  };
+
+  var won = function(n){ return n.toLocaleString('ko-KR') + '원'; };
+
+  function buildTracker(){
+    var nav = document.getElementById('tracker');
+    nav.innerHTML = '';
+    TRACKER_STEPS.forEach(function(s, i){
+      var btn = document.createElement('button');
+      btn.className = 'tracker__step';
+      btn.dataset.step = s.n;
+      btn.innerHTML = '<span class="tracker__dot">' + s.n + '</span><span class="tracker__label">' + s.label + '</span>';
+      btn.addEventListener('click', function(){ goScreen(s.n); });
+      nav.appendChild(btn);
+      if (i < TRACKER_STEPS.length - 1){
+        var rule = document.createElement('div');
+        rule.className = 'tracker__rule';
+        nav.appendChild(rule);
+      }
+    });
+  }
+
+  function updateTracker(){
+    document.querySelectorAll('.tracker__step').forEach(function(el){
+      var n = Number(el.dataset.step);
+      el.classList.toggle('is-current', n === state.current);
+      el.classList.toggle('is-done', n < state.current);
+    });
+  }
+
+  function renderHistory(){
+    var list = document.getElementById('historyList');
+    list.innerHTML = '';
+    state.history.forEach(function(h, i){
+      var row = document.createElement('div');
+      row.className = 'history__row' + (i === 0 && h.isNew ? ' history__row--new' : '');
+      row.innerHTML =
+        '<span class="history__date">' + h.date + '</span>' +
+        '<span class="history__vendor">' + h.vendor + '</span>' +
+        '<span class="history__amount">' + h.amount.toLocaleString('ko-KR') + '원</span>' +
+        '<span class="history__status">완료</span>';
+      list.appendChild(row);
+    });
+  }
+
+  function recalc(){
+    var supply = state.qty * state.price;
+    var tax = Math.round(supply * 0.1);
+    return { supply: supply, tax: tax, total: supply + tax };
+  }
+
+  function updateCalc(){
+    var c = recalc();
+    document.getElementById('calcSupply').textContent = won(c.supply);
+    document.getElementById('calcTax').textContent = won(c.tax);
+  }
+
+  function updatePreview(){
+    var c = recalc();
+    document.getElementById('pvVendor').textContent = state.vendorName;
+    document.getElementById('pvDate').textContent = state.date;
+    document.getElementById('pvItem').textContent = state.item;
+    document.getElementById('pvSupply').textContent = won(c.supply);
+    document.getElementById('pvTax').textContent = won(c.tax);
+    document.getElementById('pvTotal').textContent = won(c.total);
+  }
+
+  function updateNextButton(){
+    var btn = document.getElementById('toStep4Btn');
+    btn.disabled = !(state.verified && !state.blocked);
+  }
+
+  var agentTimers = [];
+  function clearAgentTimers(){
+    agentTimers.forEach(clearTimeout);
+    agentTimers = [];
+  }
+
+  function playAgentSequence(){
+    clearAgentTimers();
+    ['step-a','step-b','step-c'].forEach(function(id){
+      document.getElementById(id).classList.remove('is-active','is-done');
+    });
+    document.getElementById('step-c-text').textContent = '세금계산서 초안 작성 중...';
+    document.getElementById('agentQuote').textContent = '';
+
+    var stepA = document.getElementById('step-a');
+    var stepB = document.getElementById('step-b');
+    var stepC = document.getElementById('step-c');
+
+    stepA.classList.add('is-active');
+    agentTimers.push(setTimeout(function(){
+      stepA.classList.add('is-done'); stepA.classList.remove('is-active');
+      stepB.classList.add('is-active');
+    }, 500));
+
+    agentTimers.push(setTimeout(function(){
+      stepB.classList.add('is-done'); stepB.classList.remove('is-active');
+      stepC.classList.add('is-active');
+      var q = state.deductible
+        ? (state.vendorName + '는 정상 사업자로 확인되며, 해당 거래는 매입세액공제 대상입니다.')
+        : (state.vendorName + '는 간이과세자로 확인되며, 해당 거래는 매입세액공제 대상이 아닙니다.');
+      document.getElementById('agentQuote').textContent = '"' + q + '"';
+    }, 1300));
+
+    agentTimers.push(setTimeout(function(){
+      stepC.classList.add('is-done'); stepC.classList.remove('is-active');
+      document.getElementById('step-c-text').textContent = '세금계산서 초안 작성 완료';
+    }, 2100));
+
+    agentTimers.push(setTimeout(function(){
+      if (state.current === 4) { updatePreview(); goScreen(5); }
+    }, 2700));
+  }
+
+  function goScreen(n){
+    state.current = n;
+    document.querySelectorAll('.screen').forEach(function(s){
+      s.classList.toggle('is-active', Number(s.dataset.screen) === n);
+    });
+    document.getElementById('caption').textContent = CAPTIONS[n] || '';
+    updateTracker();
+
+    if (n === 4){ playAgentSequence(); }
+    else { clearAgentTimers(); }
+
+    if (n === 5){ updatePreview(); closeModal(); }
+    if (n === 6){
+      goScreen(5);
+      state.current = 6;
+      updateTracker();
+      openModal();
+      return;
+    }
+  }
+
+  function openModal(){
+    document.getElementById('confirmModal').classList.add('is-active');
+    document.getElementById('confirmInput').value = '';
+    document.getElementById('issueBtn').disabled = true;
+  }
+  function closeModal(){
+    document.getElementById('confirmModal').classList.remove('is-active');
+  }
+
+  function verifyBiz(){
+    var raw = document.getElementById('bizNoInput').value.replace(/[^0-9]/g, '');
+    if (raw.length < 10){
+      document.getElementById('bizResult').textContent = '사업자번호 10자리를 입력해주세요.';
+      document.getElementById('bizResult').className = 'field__result field__result--pending';
+      state.verified = false; state.blocked = true;
+      updateNextButton();
+      return;
+    }
+    var last = raw.charAt(raw.length - 1);
+    var resultEl = document.getElementById('bizResult');
+
+    if (last === '0'){
+      state.verified = true; state.blocked = true;
+      resultEl.textContent = '⚠ 휴업 · 폐업 사업자입니다 · 이 거래처로는 발행할 수 없습니다';
+      resultEl.className = 'field__result field__result--blocked';
+    } else {
+      state.verified = true; state.blocked = false;
+      var oddDigit = (Number(last) % 2) === 1;
+      state.deductible = oddDigit;
+      state.vendorStatus = oddDigit ? '일반과세자 · 정상 사업자' : '간이과세자 · 정상 사업자';
+      resultEl.textContent = '→ ' + state.vendorName + ' · ' + state.vendorStatus + ' 확인됨';
+      resultEl.className = 'field__result field__result--ok';
+    }
+    updateNextButton();
+  }
+
+  function init(){
+    buildTracker();
+    renderHistory();
+    updateCalc();
+    updatePreview();
+    goScreen(1);
+
+    document.getElementById('bizNoInput').value = state.bizNo;
+    document.getElementById('bizResult').textContent = '→ ' + state.vendorName + ' · ' + state.vendorStatus + ' 확인됨';
+    document.getElementById('bizResult').className = 'field__result field__result--ok';
+    updateNextButton();
+
+    document.getElementById('connectBtn').addEventListener('click', function(e){
+      var btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '인증서 확인 중...';
+      setTimeout(function(){
+        btn.disabled = false;
+        btn.textContent = '사업자 인증서로 연결하기';
+        goScreen(2);
+      }, 800);
+    });
+
+    document.getElementById('newInvoiceBtn').addEventListener('click', function(){ goScreen(3); });
+    document.getElementById('backTo2').addEventListener('click', function(){ goScreen(2); });
+    document.getElementById('backTo3').addEventListener('click', function(){ goScreen(3); });
+
+    document.getElementById('bizNoInput').addEventListener('input', function(e){
+      state.verified = false;
+      document.getElementById('bizResult').textContent = '';
+      updateNextButton();
+    });
+    document.getElementById('verifyBtn').addEventListener('click', verifyBiz);
+
+    document.getElementById('dateInput').addEventListener('input', function(e){ state.date = e.target.value; });
+    document.getElementById('itemInput').addEventListener('input', function(e){ state.item = e.target.value; });
+    document.getElementById('qtyInput').addEventListener('input', function(e){
+      state.qty = Number(e.target.value) || 0; updateCalc();
+    });
+    document.getElementById('priceInput').addEventListener('input', function(e){
+      state.price = Number(e.target.value) || 0; updateCalc();
+    });
+
+    document.getElementById('toStep4Btn').addEventListener('click', function(){
+      updatePreview();
+      goScreen(4);
+    });
+
+    document.getElementById('openModalBtn').addEventListener('click', openModal);
+    document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+
+    document.getElementById('confirmInput').addEventListener('input', function(e){
+      document.getElementById('issueBtn').disabled = e.target.value !== '발급확인';
+    });
+
+    document.getElementById('issueBtn').addEventListener('click', function(){
+      closeModal();
+      var c = recalc();
+      var rand = Math.random().toString(36).slice(2, 10).toUpperCase();
+      document.getElementById('receiptNo').textContent = '20260708-' + rand;
+      document.getElementById('doneMail').textContent = state.vendorName + ' 님께 이메일로 발송되었습니다';
+      state.history.unshift({ date: '07-08', vendor: state.vendorName, amount: c.total, isNew: true });
+      renderHistory();
+      goScreen(7);
+    });
+
+    document.getElementById('goHomeBtn').addEventListener('click', function(){ goScreen(2); });
+
+    document.getElementById('resetBtn').addEventListener('click', function(){
+      location.reload();
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+</body>
+</html>
