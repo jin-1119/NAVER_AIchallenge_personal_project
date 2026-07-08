@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공학용 계산기</title>
+<style>
+  :root {
+    --bg: #1c1c1e;
+    --btn-num: #333336;
+    --btn-num-hover: #48484a;
+    --btn-op: #ff9f0a;
+    --btn-op-hover: #ffb340;
+    --btn-fn: #a5a5a5;
+    --btn-fn-hover: #d4d4d4;
+    --btn-mem: #3a3a3c;
+    --btn-mem-hover: #5a5a5d;
+    --text: #ffffff;
+    --text-dark: #1c1c1e;
+    --accent: #ff9f0a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .calculator {
+    width: 480px;
+    padding: 20px;
+    border-radius: 24px;
+    background: #000;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .display {
+    color: var(--text);
+    text-align: right;
+    padding: 16px 10px;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+  }
+  .mem-badge {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 1px 6px;
+    visibility: hidden;
+  }
+  .display .expression {
+    font-size: 16px;
+    color: #8e8e93;
+    min-height: 20px;
+    word-break: break-all;
+  }
+  .display .result {
+    font-size: 44px;
+    font-weight: 300;
+    word-break: break-all;
+    line-height: 1.15;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .display .result.small { font-size: 26px; }
+  .mode-row, .sci-grid, .buttons {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .mode-row { grid-template-columns: repeat(5, 1fr); }
+  .sci-grid { grid-template-columns: repeat(5, 1fr); }
+  .buttons { grid-template-columns: repeat(4, 1fr); }
+  button {
+    height: 54px;
+    border: none;
+    border-radius: 27px;
+    font-size: 18px;
+    color: var(--text);
+    background: var(--btn-num);
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.05s;
+  }
+  button:active { transform: scale(0.95); }
+  .buttons button { height: 62px; font-size: 24px; }
+  button.op {
+    background: var(--btn-op);
+    font-weight: 600;
+  }
+  button.op:hover { background: var(--btn-op-hover); }
+  button.fn {
+    background: var(--btn-fn);
+    color: var(--text-dark);
+  }
+  button.fn:hover { background: var(--btn-fn-hover); }
+  button.mem {
+    background: var(--btn-mem);
+  }
+  button.mem:hover { background: var(--btn-mem-hover); }
+  button.num:hover { background: var(--btn-num-hover); }
+  button.zero {
+    grid-column: span 2;
+    border-radius: 31px;
+    text-align: left;
+    padding-left: 28px;
+  }
+  button.equals {
+    grid-column: span 4;
+    background: var(--btn-op);
+    font-weight: 600;
+    font-size: 22px;
+  }
+  button.equals:hover { background: var(--btn-op-hover); }
+  button.active {
+    background: #fff;
+    color: var(--btn-op);
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="display">
+    <div class="mem-badge" id="memBadge">M</div>
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <div class="mode-row">
+    <button class="fn" id="modeToggle" data-action="toggle-mode">DEG</button>
+    <button class="mem" data-action="mc">MC</button>
+    <button class="mem" data-action="mr">MR</button>
+    <button class="mem" data-action="madd">M+</button>
+    <button class="mem" data-action="msub">M-</button>
+  </div>
+
+  <div class="sci-grid">
+    <button class="fn" data-insert="(">(</button>
+    <button class="fn" data-insert=")">)</button>
+    <button class="fn" data-insert="%">%</button>
+    <button class="fn" data-action="clear">AC</button>
+    <button class="fn" data-action="backspace">⌫</button>
+
+    <button class="fn" data-insert="sin(">sin</button>
+    <button class="fn" data-insert="cos(">cos</button>
+    <button class="fn" data-insert="tan(">tan</button>
+    <button class="fn" data-insert="!">x!</button>
+    <button class="fn" data-insert="√(">√</button>
+
+    <button class="fn" data-insert="asin(">asin</button>
+    <button class="fn" data-insert="acos(">acos</button>
+    <button class="fn" data-insert="atan(">atan</button>
+    <button class="fn" data-insert="^" data-insert-type="operator">^</button>
+    <button class="fn" data-insert="π">π</button>
+
+    <button class="fn" data-insert="log(">log</button>
+    <button class="fn" data-insert="ln(">ln</button>
+    <button class="fn" data-insert="exp(">eˣ</button>
+    <button class="fn" data-insert="pow10(">10ˣ</button>
+    <button class="fn" data-insert="e">e</button>
+  </div>
+
+  <div class="buttons">
+    <button class="num" data-num="7">7</button>
+    <button class="num" data-num="8">8</button>
+    <button class="num" data-num="9">9</button>
+    <button class="op" data-insert="÷" data-insert-type="operator">÷</button>
+
+    <button class="num" data-num="4">4</button>
+    <button class="num" data-num="5">5</button>
+    <button class="num" data-num="6">6</button>
+    <button class="op" data-insert="×" data-insert-type="operator">×</button>
+
+    <button class="num" data-num="1">1</button>
+    <button class="num" data-num="2">2</button>
+    <button class="num" data-num="3">3</button>
+    <button class="op" data-insert="−" data-insert-type="operator">−</button>
+
+    <button class="num zero" data-num="0">0</button>
+    <button class="num" data-action="decimal">.</button>
+    <button class="op" data-insert="+" data-insert-type="operator">+</button>
+
+    <button class="equals" data-action="equals">=</button>
+  </div>
+</div>
+
+<script>
+  const expressionEl = document.getElementById('expression');
+  const resultEl = document.getElementById('result');
+  const memBadge = document.getElementById('memBadge');
+  const modeToggleBtn = document.getElementById('modeToggle');
+
+  const state = {
+    expr: '',
+    displayExpr: '',
+    justEvaluated: false,
+    lastResult: null,
+    error: false,
+    angleMode: 'deg',
+    memory: 0
+  };
+
+  // ---------- Tokenizer ----------
+  const IDENTS = ['asin', 'acos', 'atan', 'pow10', 'sqrt', 'exp', 'sin', 'cos', 'tan', 'log', 'ln', 'pi', 'e'];
+
+  function tokenize(str) {
+    const tokens = [];
+    let i = 0;
+    const n = str.length;
+    while (i < n) {
+      const c = str[i];
+      if (c === ' ') { i++; continue; }
+      if (/[0-9.]/.test(c)) {
+        let j = i, seenDot = false;
+        while (j < n && /[0-9.]/.test(str[j])) {
+          if (str[j] === '.') { if (seenDot) break; seenDot = true; }
+          j++;
+        }
+        tokens.push({ type: 'NUM', value: parseFloat(str.slice(i, j)) });
+        i = j;
+        continue;
+      }
+      if (/[a-zA-Z]/.test(c)) {
+        let matched = null;
+        for (const id of IDENTS) {
+          if (str.slice(i, i + id.length).toLowerCase() === id) { matched = id; break; }
+        }
+        if (!matched) throw new Error('Unknown token');
+        if (matched === 'pi') tokens.push({ type: 'CONST', value: Math.PI });
+        else if (matched === 'e') tokens.push({ type: 'CONST', value: Math.E });
+        else tokens.push({ type: 'FUNC', value: matched });
+        i += matched.length;
+        continue;
+      }
+      if (c === 'π') { tokens.push({ type: 'CONST', value: Math.PI }); i++; continue; }
+      if (c === '√') { tokens.push({ type: 'FUNC', value: 'sqrt' }); i++; continue; }
+      if (c === '+') { tokens.push({ type: 'PLUS' }); i++; continue; }
+      if (c === '-' || c === '−') { tokens.push({ type: 'MINUS' }); i++; continue; }
+      if (c === '*' || c === '×') { tokens.push({ type: 'MUL' }); i++; continue; }
+      if (c === '/' || c === '÷') { tokens.push({ type: 'DIV' }); i++; continue; }
+      if (c === '^') { tokens.push({ type: 'POW' }); i++; continue; }
+      if (c === '!') { tokens.push({ type: 'FACT' }); i++; continue; }
+      if (c === '%') { tokens.push({ type: 'PERCENT' }); i++; continue; }
+      if (c === '(') { tokens.push({ type: 'LPAREN' }); i++; continue; }
+      if (c === ')') { tokens.push({ type: 'RPAREN' }); i++; continue; }
+      throw new Error('Unknown character');
+    }
+    return tokens;
+  }
+
+  // ---------- Parser + Evaluator (recursive descent) ----------
+  function toRad(x) { return state.angleMode === 'deg' ? x * Math.PI / 180 : x; }
+  function fromRad(x) { return state.angleMode === 'deg' ? x * 180 / Math.PI : x; }
+
+  function applyFunc(name, x) {
+    switch (name) {
+      case 'sin': return Math.sin(toRad(x));
+      case 'cos': return Math.cos(toRad(x));
+      case 'tan': return Math.tan(toRad(x));
+      case 'asin':
+        if (x < -1 || x > 1) throw new Error('Domain error');
+        return fromRad(Math.asin(x));
+      case 'acos':
+        if (x < -1 || x > 1) throw new Error('Domain error');
+        return fromRad(Math.acos(x));
+      case 'atan': return fromRad(Math.atan(x));
+      case 'log':
+        if (x <= 0) throw new Error('Domain error');
+        return Math.log10(x);
+      case 'ln':
+        if (x <= 0) throw new Error('Domain error');
+        return Math.log(x);
+      case 'sqrt':
+        if (x < 0) throw new Error('Domain error');
+        return Math.sqrt(x);
+      case 'exp': return Math.exp(x);
+      case 'pow10': return Math.pow(10, x);
+      default: throw new Error('Unknown function');
+    }
+  }
+
+  function factorial(n) {
+    if (!Number.isInteger(n) || n < 0) throw new Error('Invalid factorial');
+    if (n > 170) throw new Error('Factorial overflow');
+    let r = 1;
+    for (let k = 2; k <= n; k++) r *= k;
+    return r;
+  }
+
+  function parse(tokens) {
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const next = () => tokens[pos++];
+    const expect = (type) => {
+      const t = next();
+      if (!t || t.type !== type) throw new Error('Syntax error');
+      return t;
+    };
+
+    function parseExpression() {
+      let v = parseTerm();
+      while (peek() && (peek().type === 'PLUS' || peek().type === 'MINUS')) {
+        const op = next().type;
+        const rhs = parseTerm();
+        v = op === 'PLUS' ? v + rhs : v - rhs;
+      }
+      return v;
+    }
+
+    function parseTerm() {
+      let v = parseUnary();
+      while (peek() && (peek().type === 'MUL' || peek().type === 'DIV')) {
+        const op = next().type;
+        const rhs = parseUnary();
+        if (op === 'MUL') v = v * rhs;
+        else {
+          if (rhs === 0) throw new Error('Division by zero');
+          v = v / rhs;
+        }
+      }
+      return v;
+    }
+
+    function parseUnary() {
+      if (peek() && (peek().type === 'PLUS' || peek().type === 'MINUS')) {
+        const op = next().type;
+        const operand = parseUnary();
+        return op === 'MINUS' ? -operand : operand;
+      }
+      return parsePower();
+    }
+
+    function parsePower() {
+      let base = parsePostfix();
+      if (peek() && peek().type === 'POW') {
+        next();
+        const exponent = parseUnary();
+        base = Math.pow(base, exponent);
+      }
+      return base;
+    }
+
+    function parsePostfix() {
+      let v = parsePrimary();
+      while (peek() && (peek().type === 'FACT' || peek().type === 'PERCENT')) {
+        const t = next();
+        v = t.type === 'FACT' ? factorial(v) : v / 100;
+      }
+      return v;
+    }
+
+    function parsePrimary() {
+      const t = peek();
+      if (!t) throw new Error('Unexpected end of expression');
+      if (t.type === 'NUM') { next(); return t.value; }
+      if (t.type === 'CONST') { next(); return t.value; }
+      if (t.type === 'FUNC') {
+        next();
+        expect('LPAREN');
+        const arg = parseExpression();
+        expect('RPAREN');
+        return applyFunc(t.value, arg);
+      }
+      if (t.type === 'LPAREN') {
+        next();
+        const v = parseExpression();
+        expect('RPAREN');
+        return v;
+      }
+      throw new Error('Unexpected token');
+    }
+
+    const result = parseExpression();
+    if (pos !== tokens.length) throw new Error('Unexpected token');
+    return result;
+  }
+
+  function evaluate(str) {
+    const tokens = tokenize(str);
+    if (tokens.length === 0) return 0;
+    const result = parse(tokens);
+    if (!Number.isFinite(result)) throw new Error('Result not finite');
+    return result;
+  }
+
+  // ---------- Formatting ----------
+  function formatPlain(num) {
+    const rounded = Math.round((num + Number.EPSILON) * 1e10) / 1e10;
+    return rounded.toString();
+  }
+
+  function formatDisplay(num) {
+    const rounded = Math.round((num + Number.EPSILON) * 1e10) / 1e10;
+    const str = rounded.toString();
+    if (str.includes('e')) return str;
+    const [intPart, decPart] = str.split('.');
+    const formattedInt = new Intl.NumberFormat('en-US').format(Number(intPart));
+    return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+  }
+
+  // ---------- State mutation ----------
+  function resetIfNeeded() {
+    if (state.error) { state.expr = ''; state.error = false; }
+    if (state.justEvaluated) { state.expr = ''; state.justEvaluated = false; }
+  }
+
+  function inputDigit(d) {
+    resetIfNeeded();
+    state.expr += d;
+  }
+
+  function inputDecimal() {
+    resetIfNeeded();
+    let i = state.expr.length;
+    while (i > 0 && /[0-9.]/.test(state.expr[i - 1])) i--;
+    const currentToken = state.expr.slice(i);
+    if (currentToken.includes('.')) return;
+    if (state.expr === '' || !/[0-9]$/.test(state.expr)) state.expr += '0.';
+    else state.expr += '.';
+  }
+
+  function clearAll() {
+    state.expr = '';
+    state.displayExpr = '';
+    state.error = false;
+    state.justEvaluated = false;
+  }
+
+  function backspace() {
+    if (state.error) { state.expr = ''; state.error = false; return; }
+    if (state.justEvaluated) { state.expr = ''; state.justEvaluated = false; return; }
+    state.expr = state.expr.slice(0, -1);
+  }
+
+  function insertLiteral(token) {
+    resetIfNeeded();
+    state.expr += token;
+  }
+
+  function insertOperator(sym) {
+    if (state.error) { state.expr = ''; state.error = false; }
+    if (state.justEvaluated) {
+      state.expr = formatPlain(state.lastResult);
+      state.justEvaluated = false;
+    }
+    const opChars = ['+', '−', '×', '÷', '^'];
+    if (state.expr === '') {
+      if (sym === '−') state.expr = '−';
+      return;
+    }
+    const last = state.expr.slice(-1);
+    if (opChars.includes(last) && sym !== '−') {
+      state.expr = state.expr.slice(0, -1) + sym;
+    } else {
+      state.expr += sym;
+    }
+  }
+
+  function insertMemoryValue() {
+    resetIfNeeded();
+    state.expr += formatPlain(state.memory);
+  }
+
+  function memoryAdjust(sign) {
+    let val;
+    try {
+      val = state.justEvaluated ? state.lastResult : (state.expr === '' ? 0 : evaluate(state.expr));
+    } catch (e) { return; }
+    state.memory += sign * val;
+  }
+
+  function toggleMode() {
+    state.angleMode = state.angleMode === 'deg' ? 'rad' : 'deg';
+  }
+
+  function pressEquals() {
+    if (state.error) { state.expr = ''; state.error = false; return; }
+    if (state.expr === '') return;
+    try {
+      const result = evaluate(state.expr);
+      state.displayExpr = state.expr;
+      state.lastResult = result;
+      state.expr = formatPlain(result);
+      state.justEvaluated = true;
+      state.error = false;
+    } catch (e) {
+      state.error = true;
+    }
+  }
+
+  // ---------- Render ----------
+  function render() {
+    modeToggleBtn.textContent = state.angleMode.toUpperCase();
+    modeToggleBtn.classList.toggle('active', state.angleMode === 'rad');
+    memBadge.style.visibility = state.memory !== 0 ? 'visible' : 'hidden';
+
+    let text;
+    if (state.error) {
+      expressionEl.textContent = state.expr;
+      text = 'Error';
+    } else if (state.justEvaluated) {
+      expressionEl.textContent = state.displayExpr + ' =';
+      text = formatDisplay(state.lastResult);
+    } else {
+      expressionEl.textContent = '';
+      text = state.expr === '' ? '0' : state.expr;
+    }
+    resultEl.textContent = text;
+    resultEl.classList.toggle('small', text.length > 14);
+  }
+
+  // ---------- Event wiring ----------
+  function handleButton(ds) {
+    if (ds.num !== undefined) inputDigit(ds.num);
+    else if (ds.action === 'decimal') inputDecimal();
+    else if (ds.action === 'clear') clearAll();
+    else if (ds.action === 'backspace') backspace();
+    else if (ds.action === 'equals') pressEquals();
+    else if (ds.action === 'mc') { state.memory = 0; }
+    else if (ds.action === 'mr') insertMemoryValue();
+    else if (ds.action === 'madd') memoryAdjust(1);
+    else if (ds.action === 'msub') memoryAdjust(-1);
+    else if (ds.action === 'toggle-mode') toggleMode();
+    else if (ds.insert !== undefined) {
+      if (ds.insertType === 'operator') insertOperator(ds.insert);
+      else insertLiteral(ds.insert);
+    }
+    render();
+  }
+
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => handleButton(btn.dataset));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
+    else if (e.key === '.') inputDecimal();
+    else if (e.key === '+') insertOperator('+');
+    else if (e.key === '-') insertOperator('−');
+    else if (e.key === '*') insertOperator('×');
+    else if (e.key === '/') { e.preventDefault(); insertOperator('÷'); }
+    else if (e.key === '^') insertOperator('^');
+    else if (e.key === '(') insertLiteral('(');
+    else if (e.key === ')') insertLiteral(')');
+    else if (e.key === '!') insertLiteral('!');
+    else if (e.key === '%') insertLiteral('%');
+    else if (e.key === 'Enter' || e.key === '=') pressEquals();
+    else if (e.key === 'Escape') clearAll();
+    else if (e.key === 'Backspace') backspace();
+    else return;
+    render();
+  });
+
+  render();
+</script>
+
+</body>
+</html>

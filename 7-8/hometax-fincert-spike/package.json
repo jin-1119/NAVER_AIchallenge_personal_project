@@ -1,0 +1,12 @@
+{
+  "name": "hometax-fincert-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "explore": "node explore-login.mjs",
+    "login-test": "node login-test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

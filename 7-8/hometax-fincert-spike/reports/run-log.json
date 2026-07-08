@@ -1,0 +1,58 @@
+[
+  {
+    "step": "01-goto-home",
+    "ok": true
+  },
+  {
+    "step": "02-find-login-entry",
+    "ok": true
+  },
+  {
+    "step": "03-dump-main-frame-inputs",
+    "ok": true
+  },
+  {
+    "step": "04-dump-all-frames",
+    "ok": true
+  },
+  {
+    "note": "'금융인증서' 텍스트 후보 5개 발견 (메인 프레임 기준)"
+  },
+  {
+    "step": "05-find-fincert-tab",
+    "ok": true
+  },
+  {
+    "step": "06-click-gongdong-geumyung-button",
+    "ok": true
+  },
+  {
+    "note": "frame txppIframe (about:blank) HTML 저장됨, 길이=59"
+  },
+  {
+    "note": "frame dscert (https://hometax.go.kr/NTSMagicLine4Web/ML4Web/Child.html?lgUrl=hometax.go.kr:443&random=71684.38122826345) HTML 저장됨, 길이=506793"
+  },
+  {
+    "note": "frame dsmlcert (about:blank) HTML 저장됨, 길이=39"
+  },
+  {
+    "note": "frame mobicertnpframe (about:blank) HTML 저장됨, 길이=39"
+  },
+  {
+    "note": "frame smartcertnpframe (about:blank) HTML 저장됨, 길이=39"
+  },
+  {
+    "note": "frame opencertSyncIframe (https://www.yessign.or.kr:3100/open/html/v2/sync.html?20260708) HTML 저장됨, 길이=536"
+  },
+  {
+    "note": "frame opencertIframe (https://www.yessign.or.kr:3100/open/html/v2/index.html?2022-11-16T00_31_50.057Z) HTML 저장됨, 길이=3236"
+  },
+  {
+    "step": "07-wait-and-recheck-cert-modal",
+    "ok": true
+  },
+  {
+    "step": "08-click-fincert-tab-in-modal",
+    "ok": true
+  }
+]
