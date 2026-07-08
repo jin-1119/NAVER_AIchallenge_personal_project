@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계산기</title>
+<style>
+  :root {
+    --bg: #1c1c1e;
+    --display-bg: #1c1c1e;
+    --btn-num: #333336;
+    --btn-num-hover: #48484a;
+    --btn-op: #ff9f0a;
+    --btn-op-hover: #ffb340;
+    --btn-fn: #a5a5a5;
+    --btn-fn-hover: #d4d4d4;
+    --text: #ffffff;
+    --text-dark: #1c1c1e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .calculator {
+    width: 320px;
+    padding: 20px;
+    border-radius: 24px;
+    background: #000;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .display {
+    color: var(--text);
+    text-align: right;
+    padding: 20px 10px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .display .expression {
+    font-size: 18px;
+    color: #8e8e93;
+    min-height: 22px;
+    word-break: break-all;
+  }
+  .display .result {
+    font-size: 52px;
+    font-weight: 300;
+    word-break: break-all;
+    line-height: 1.1;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+  }
+  button {
+    height: 68px;
+    border: none;
+    border-radius: 50%;
+    font-size: 26px;
+    color: var(--text);
+    background: var(--btn-num);
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.05s;
+  }
+  button:active { transform: scale(0.95); }
+  button.op {
+    background: var(--btn-op);
+    font-weight: 600;
+  }
+  button.op:hover { background: var(--btn-op-hover); }
+  button.fn {
+    background: var(--btn-fn);
+    color: var(--text-dark);
+    font-size: 22px;
+  }
+  button.fn:hover { background: var(--btn-fn-hover); }
+  button.num:hover { background: var(--btn-num-hover); }
+  button.zero {
+    grid-column: span 2;
+    border-radius: 34px;
+    text-align: left;
+    padding-left: 28px;
+  }
+  button.active {
+    background: #fff;
+    color: var(--btn-op);
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="display">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+  <div class="buttons">
+    <button class="fn" data-action="clear">AC</button>
+    <button class="fn" data-action="negate">+/-</button>
+    <button class="fn" data-action="percent">%</button>
+    <button class="op" data-action="divide">÷</button>
+
+    <button class="num" data-num="7">7</button>
+    <button class="num" data-num="8">8</button>
+    <button class="num" data-num="9">9</button>
+    <button class="op" data-action="multiply">×</button>
+
+    <button class="num" data-num="4">4</button>
+    <button class="num" data-num="5">5</button>
+    <button class="num" data-num="6">6</button>
+    <button class="op" data-action="subtract">−</button>
+
+    <button class="num" data-num="1">1</button>
+    <button class="num" data-num="2">2</button>
+    <button class="num" data-num="3">3</button>
+    <button class="op" data-action="add">+</button>
+
+    <button class="num zero" data-num="0">0</button>
+    <button class="num" data-action="decimal">.</button>
+    <button class="op" data-action="equals">=</button>
+  </div>
+</div>
+
+<script>
+  const resultEl = document.getElementById('result');
+  const expressionEl = document.getElementById('expression');
+
+  let current = '0';
+  let previous = null;
+  let operator = null;
+  let overwrite = true;
+
+  const opSymbols = { add: '+', subtract: '−', multiply: '×', divide: '÷' };
+
+  function updateDisplay() {
+    resultEl.textContent = formatNumber(current);
+    expressionEl.textContent = previous !== null && operator
+      ? `${formatNumber(previous)} ${opSymbols[operator]}`
+      : '';
+  }
+
+  function formatNumber(numStr) {
+    if (numStr === 'Error') return numStr;
+    const [intPart, decPart] = numStr.split('.');
+    const formattedInt = new Intl.NumberFormat('en-US').format(Number(intPart));
+    return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+  }
+
+  function inputNumber(num) {
+    if (current === 'Error') { current = '0'; overwrite = true; }
+    if (overwrite) {
+      current = num;
+      overwrite = false;
+    } else {
+      if (current === '0') current = num;
+      else current += num;
+    }
+  }
+
+  function inputDecimal() {
+    if (current === 'Error') { current = '0'; overwrite = false; }
+    if (overwrite) {
+      current = '0.';
+      overwrite = false;
+      return;
+    }
+    if (!current.includes('.')) current += '.';
+  }
+
+  function clearAll() {
+    current = '0';
+    previous = null;
+    operator = null;
+    overwrite = true;
+  }
+
+  function negate() {
+    if (current === 'Error') return;
+    current = (parseFloat(current) * -1).toString();
+  }
+
+  function percent() {
+    if (current === 'Error') return;
+    current = (parseFloat(current) / 100).toString();
+  }
+
+  function compute() {
+    const a = parseFloat(previous);
+    const b = parseFloat(current);
+    let result;
+    switch (operator) {
+      case 'add': result = a + b; break;
+      case 'subtract': result = a - b; break;
+      case 'multiply': result = a * b; break;
+      case 'divide':
+        if (b === 0) { current = 'Error'; previous = null; operator = null; overwrite = true; return; }
+        result = a / b;
+        break;
+      default: return;
+    }
+    result = Math.round((result + Number.EPSILON) * 1e10) / 1e10;
+    current = result.toString();
+    previous = null;
+    operator = null;
+    overwrite = true;
+  }
+
+  function chooseOperator(op) {
+    if (current === 'Error') return;
+    if (operator !== null && !overwrite) {
+      compute();
+    }
+    previous = current;
+    operator = op;
+    overwrite = true;
+  }
+
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const num = btn.dataset.num;
+      const action = btn.dataset.action;
+
+      if (num !== undefined) {
+        inputNumber(num);
+      } else if (action === 'decimal') {
+        inputDecimal();
+      } else if (action === 'clear') {
+        clearAll();
+      } else if (action === 'negate') {
+        negate();
+      } else if (action === 'percent') {
+        percent();
+      } else if (action === 'equals') {
+        if (operator !== null) compute();
+      } else if (['add', 'subtract', 'multiply', 'divide'].includes(action)) {
+        chooseOperator(action);
+      }
+      updateDisplay();
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') inputNumber(e.key);
+    else if (e.key === '.') inputDecimal();
+    else if (e.key === '+') chooseOperator('add');
+    else if (e.key === '-') chooseOperator('subtract');
+    else if (e.key === '*') chooseOperator('multiply');
+    else if (e.key === '/') { e.preventDefault(); chooseOperator('divide'); }
+    else if (e.key === 'Enter' || e.key === '=') { if (operator !== null) compute(); }
+    else if (e.key === 'Escape') clearAll();
+    else if (e.key === 'Backspace') {
+      if (current !== 'Error' && !overwrite) {
+        current = current.length > 1 ? current.slice(0, -1) : '0';
+        if (current === '') current = '0';
+      }
+    }
+    else return;
+    updateDisplay();
+  });
+
+  updateDisplay();
+</script>
+
+</body>
+</html>

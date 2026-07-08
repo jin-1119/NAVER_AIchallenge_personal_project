@@ -1,0 +1,98 @@
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>OPENCERT</title>
+
+    <!-- no favicon -->
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
+
+    <!-- Version : 3.2.0 -->
+    <script>window.version = "3.2.0"</script>
+
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, width=device-width">
+
+    <style>
+        body {
+            margin: 0px;
+        }
+        div#title, div#main, div#bottom{
+            font-family: Apple SD Gothic Neo, Apple Gothic, Malgun Gothic;
+        }
+        div#title {
+            text-align: center;
+            background-color: #0c66ff;
+            height: 54px;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 54px;
+            vertical-align: middle;
+            color: #fff;
+        }
+        div#main {
+            padding: 7px 16px 0px 7px;
+            background-color: #e5e9ee;
+            font-size: 11px;
+            height: 46px;
+            vertical-align: 46px;
+        }
+        button#openCallback {
+            border: 0px;
+        }
+
+        div#warning {
+        }
+        div#goBackDetail {
+        }
+        .needToShow {
+            display: none;
+        }
+        @media screen and (min-width: 300px) {
+            div#title {
+                height: 124px;
+                font-size: 18px;
+                line-height: 124px;
+                vertical-align: middle;
+            }
+            div#main {
+                background-color: #fff;
+                border: 1px dotted #c4cad1;
+                font-size: 16px;
+                margin: 16px 15px 34px 14px;
+                height: auto;
+                padding: 22px 12px 22px 13px;
+            }
+            div#main > div#goBackDetail {
+                margin-top: 8px;
+            }
+            button#openCallback{
+                -webkit-appearance: button-bevel;
+                height: 45px;
+                width: 260px;
+                font-size: 16px;
+                background-color: #0c66ff;
+                border-radius: 22.5px;
+                color: #fff;
+                margin: auto;
+            }
+        }
+    </style>
+    <script type="text/javascript" src="./js/jquery-3.3.1.min.js?2022-11-16T00_31_02.137Z"></script>
+    <script type="text/javascript" src="./js/text-encoder-polyfill.min.js?2022-11-16T00_31_02.137Z"></script>
+    <script type="text/javascript" src="./js/webcrypto-shim.min.js?2022-11-16T00_31_02.137Z"></script>
+    <script type="text/javascript" src="./js/ua-parser.min.js?2022-11-16T00_31_02.137Z"></script>
+    <script type="text/javascript" src="./cloud_config.js?2022-11-16T00_31_02.137Z"></script>
+    <script type="text/javascript" src="./main.js?2022-11-16T00_31_02.137Z"></script>
+
+</head>
+<body>
+<div id="title">브라우저 공동저장소 서비스 중입니다.</div>
+<div id="main">
+    <div id="warning">현재 창을 닫으실 경우 브라우저 공동저장소를 사용할 수 없습니다.</div>
+    <div id="goBackDetail" class="needToShow">아래 "확인"버튼을 클릭하여 이전화면에서 계속 진행하여 주시기 바랍니다.</div>
+</div>
+<div id="bottom">
+    <button id="openCallback" class="needToShow">확인</button>
+</div>
+
+
+
+</body></html>
